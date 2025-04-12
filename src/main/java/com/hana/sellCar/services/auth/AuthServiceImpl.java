@@ -19,24 +19,6 @@ public class AuthServiceImpl implements AuthService {
         this.userRepository = userRepository;
     }
 
-    @PostConstruct
-    public void initAdmin() {
-        createAdmin();
-    }
-
-    private void createAdmin() {
-        if (userRepository.findByUserRole(UserRole.ADMIN).isEmpty()) {
-            User admin = new User();
-            admin.setEmail("admin@test.com");
-            admin.setName("ADMIN");
-            admin.setUserRole(UserRole.ADMIN); // don't forget this line!
-            admin.setPassword(new BCryptPasswordEncoder().encode("admin"));
-            userRepository.save(admin);
-            System.out.println("ADMIN created successfully!!");
-        } else {
-            System.out.println("ADMIN already exists!!");
-        }
-    }
 
     @Override
     public Boolean hasUserWithEmail(String email) {
