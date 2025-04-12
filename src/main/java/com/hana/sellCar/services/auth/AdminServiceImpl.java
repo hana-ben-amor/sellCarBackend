@@ -7,11 +7,12 @@ import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 @Service
 @RequiredArgsConstructor
-public class AdminServiceImpl {
+public class AdminServiceImpl implements AuthService {
 
     private final UserRepository userRepository;
 
@@ -36,5 +37,10 @@ public class AdminServiceImpl {
         } else {
             System.out.println("ADMIN already exists!!");
         }
+    }
+
+    @Override
+    public Boolean hasUserWithEmail(String email) {
+        return userRepository.findFirstByEmail(email).isPresent();
     }
 }
