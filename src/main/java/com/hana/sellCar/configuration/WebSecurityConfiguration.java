@@ -1,5 +1,6 @@
 package com.hana.sellCar.configuration;
 
+import com.hana.sellCar.enums.UserRole;
 import com.hana.sellCar.services.jwt.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -16,6 +17,7 @@ import org.springframework.security.config.annotation.web.configurers.AbstractHt
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.web.servlet.config.annotation.CorsRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
@@ -25,6 +27,8 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 public class WebSecurityConfiguration {
     @Autowired
     private UserService userService;
+    @Autowired
+    private JwtAuthenticationFilter jwtAuthenticationFilter;
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
@@ -32,9 +36,14 @@ public class WebSecurityConfiguration {
                 .csrf(AbstractHttpConfigurer::disable) // Disable CSRF protection
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/auth/**").permitAll() // Accès public
+                        .requestMatchers("/api/customer/**").hasAuthority("CUSTOMER")
+                        .requestMatchers("/api/admin/**").hasAuthority("ADMIN")
+
                         .anyRequest().authenticated() // Toutes les autres requêtes nécessitent une authentification
                 )
-                .sessionManagement((manager -> manager.sessionCreationPolicy(SessionCreationPolicy.STATELESS)));
+                .sessionManagement((manager -> manager.sessionCreationPolicy(SessionCreationPolicy.STATELESS)))
+                .authenticationProvider(authenticationProvider())
+                .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
     }

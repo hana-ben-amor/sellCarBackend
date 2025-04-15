@@ -1,6 +1,5 @@
 package com.hana.sellCar.configuration;
 
-import ch.qos.logback.core.util.StringUtil;
 import com.hana.sellCar.services.jwt.UserService;
 import com.hana.sellCar.utils.JWTUtil;
 import io.micrometer.common.util.StringUtils;
@@ -20,7 +19,6 @@ import org.springframework.web.filter.OncePerRequestFilter;
 import java.io.IOException;
 
 @Component
-@RequiredArgsConstructor
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
     private final JWTUtil jwtUtil;
     private final UserService userService;
@@ -29,32 +27,41 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         this.userService = userService;
     }
 
+
     @Override
-    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
-        final String authHeader=request.getHeader("Authorization");
+    protected void doFilterInternal(HttpServletRequest request,
+                                    HttpServletResponse response,
+                                    FilterChain filterChain) throws ServletException, IOException {
+
+        final String authHeader = request.getHeader("Authorization");
         final String jwt;
         final String userEmail;
+
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
             filterChain.doFilter(request, response); // No token? Continue
             return;
         }
-        jwt = authHeader.substring(7); // Remove "Bearer "
-        userEmail = jwtUtil.extractUsername(jwt);
 
-        if(userEmail == null && SecurityContextHolder.getContext().getAuthentication()== null){
-            UserDetails userDetails=userService.userDetailsService().loadUserByUsername(userEmail);
-            if (jwtUtil.isTokenValid(jwt,userDetails)){
-                SecurityContext context=SecurityContextHolder.createEmptyContext();
-                UsernamePasswordAuthenticationToken usernamePasswordAuthenticationToken=new UsernamePasswordAuthenticationToken(
-                        userDetails,
-                        null,
-                        userDetails.getAuthorities()
-                );
-                usernamePasswordAuthenticationToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
-                context.setAuthentication(usernamePasswordAuthenticationToken);
-                SecurityContextHolder.setContext(context);
+        jwt = authHeader.substring(7); // Remove "Bearer "
+        userEmail = jwtUtil.extractUsername(jwt); // Get email (subject) from token
+
+        // FIX: This should be != null
+        if (userEmail != null && SecurityContextHolder.getContext().getAuthentication() == null) {
+            UserDetails userDetails = userService.userDetailsService().loadUserByUsername(userEmail);
+
+            if (jwtUtil.isTokenValid(jwt, userDetails)) {
+                UsernamePasswordAuthenticationToken authToken =
+                        new UsernamePasswordAuthenticationToken(
+                                userDetails,
+                                null,
+                                userDetails.getAuthorities()
+                        );
+                authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+                SecurityContextHolder.getContext().setAuthentication(authToken);
             }
         }
-        filterChain.doFilter(request,response);
+
+        filterChain.doFilter(request, response);
     }
+
 }

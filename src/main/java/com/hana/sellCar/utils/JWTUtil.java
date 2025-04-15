@@ -57,7 +57,7 @@ public class JWTUtil {
 
     public boolean isTokenValid(String token, UserDetails userDetails){
         final String username=extractUsername(token);
-        return ((username.equals(userDetails.getUsername()))&&(isTokenExpired(token)));
+        return ((username.equals(userDetails.getUsername()))&&(!isTokenExpired(token)));
     }
 
     private String generateToken(Map<String,Object> extraClaims, UserDetails userDetails){
@@ -68,9 +68,16 @@ public class JWTUtil {
                 .expiration(new Date(System.currentTimeMillis()+1000*60*60*24))
                 .signWith(getSigningKey(), SignatureAlgorithm.HS256).compact();
     }
-
     public String generateToken(UserDetails userDetails){
-        return generateToken(new HashMap<>(),userDetails);
+        Map<String, Object> extraClaims = new HashMap<>();
+        extraClaims.put("authorities", userDetails.getAuthorities()
+                .stream()
+                .map(auth -> auth.getAuthority())
+                .toList()); // or .collect(Collectors.toList()) if using Java < 16
+        return generateToken(extraClaims, userDetails);
     }
+
+
+
 
 }
