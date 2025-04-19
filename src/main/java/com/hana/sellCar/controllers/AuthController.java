@@ -18,6 +18,7 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Map;
 import java.util.Optional;
 
 @RestController
@@ -72,12 +73,38 @@ public class AuthController {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body("User not found");
         }
 
-        String jwt = jwtUtil.generateToken(userDetails);
+        String accessToken = jwtUtil.generateAccessToken(userDetails);
+        String refreshToken = jwtUtil.generateRefreshToken(userDetails);
         AuthResponse authResponse = new AuthResponse();
-        authResponse.setJwt(jwt);
+        authResponse.setAccessToken(accessToken);
+        authResponse.setRefreshToken(refreshToken);
         authResponse.setUserId(optUser.get().getId());
         authResponse.setUserRole(optUser.get().getUserRole());
 
         return ResponseEntity.ok(authResponse);
     }
+    @PostMapping("/refresh-token")
+    public ResponseEntity<?> refreshAccessToken(@RequestBody Map<String, String> request) {
+        String refreshToken = request.get("refreshToken");
+
+        if (refreshToken == null || refreshToken.trim().isEmpty()) {
+            return ResponseEntity.badRequest().body("Refresh token is required");
+        }
+
+        try {
+            String username = jwtUtil.extractUsername(refreshToken);
+            UserDetails userDetails = userService.userDetailsService().loadUserByUsername(username);
+
+            if (!jwtUtil.isTokenValid(refreshToken, userDetails)) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid refresh token");
+            }
+
+            String newAccessToken = jwtUtil.generateAccessToken(userDetails);
+
+            return ResponseEntity.ok(Map.of("accessToken", newAccessToken));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid or expired refresh token");
+        }
+    }
+
 }

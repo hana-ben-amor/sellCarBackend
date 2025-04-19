@@ -10,7 +10,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
 public class CustomerServiceImpl implements CustomerService{
@@ -47,6 +50,12 @@ public class CustomerServiceImpl implements CustomerService{
         }
 
         return false;
+    }
+
+    @Override
+    public List<CarDTO> getMyCars(Long userId) {
+        Optional<User> user=userRepository.findById(userId);
+        return carRepository.findByUser(user).stream().map(Car::getCarDTO).collect(Collectors.toList());
     }
 
 }

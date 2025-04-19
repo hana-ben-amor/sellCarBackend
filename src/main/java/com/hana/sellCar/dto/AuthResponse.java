@@ -3,17 +3,27 @@ package com.hana.sellCar.dto;
 import com.hana.sellCar.enums.UserRole;
 
 public class AuthResponse {
-    private String jwt;
     private Long userId;
     private UserRole userRole;
+    private String accessToken;
+    private String refreshToken;
 
-    public String getJwt() {
-        return jwt;
+    public String getAccessToken() {
+        return accessToken;
     }
 
-    public void setJwt(String jwt) {
-        this.jwt = jwt;
+    public void setAccessToken(String accessToken) {
+        this.accessToken = accessToken;
     }
+
+    public String getRefreshToken() {
+        return refreshToken;
+    }
+
+    public void setRefreshToken(String refreshToken) {
+        this.refreshToken = refreshToken;
+    }
+
 
     public Long getUserId() {
         return userId;

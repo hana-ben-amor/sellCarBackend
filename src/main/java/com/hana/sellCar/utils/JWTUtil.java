@@ -5,6 +5,7 @@ import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
+import lombok.Value;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Component;
 
@@ -19,6 +20,11 @@ import java.util.function.Function;
 public class JWTUtil {
     //this is used to extract token , user details ,
     //decode the token etc
+
+
+    private long ACCESS_TOKEN_EXPIRATION=900000;
+
+    private long REFRESH_TOKEN_EXPIRATION=604800000 ;
 
     private SecretKey getSigningKey(){
         String SECRET="a4cb27c704b10c930578922eb9d984f1e99be823e31a5bee54ce903db21174613a8afe355721b222360edaa3a472ff699a84aa16754c9f7f35f99da10e0d86a1";
@@ -60,21 +66,29 @@ public class JWTUtil {
         return ((username.equals(userDetails.getUsername()))&&(!isTokenExpired(token)));
     }
 
-    private String generateToken(Map<String,Object> extraClaims, UserDetails userDetails){
+
+    private String generateToken(Map<String, Object> extraClaims, UserDetails userDetails, long expirationTime) {
         return Jwts.builder()
                 .claims(extraClaims)
                 .setSubject(userDetails.getUsername())
                 .issuedAt(new Date(System.currentTimeMillis()))
-                .expiration(new Date(System.currentTimeMillis()+1000*60*60*24))
-                .signWith(getSigningKey(), SignatureAlgorithm.HS256).compact();
+                .expiration(new Date(System.currentTimeMillis() + expirationTime))
+                .signWith(getSigningKey(), SignatureAlgorithm.HS256)
+                .compact();
     }
-    public String generateToken(UserDetails userDetails){
-        Map<String, Object> extraClaims = new HashMap<>();
-        extraClaims.put("authorities", userDetails.getAuthorities()
+
+
+    public String generateAccessToken(UserDetails userDetails) {
+        Map<String, Object> claims = new HashMap<>();
+        claims.put("authorities", userDetails.getAuthorities()
                 .stream()
                 .map(auth -> auth.getAuthority())
-                .toList()); // or .collect(Collectors.toList()) if using Java < 16
-        return generateToken(extraClaims, userDetails);
+                .toList());
+        return generateToken(claims, userDetails, ACCESS_TOKEN_EXPIRATION);
+    }
+
+    public String generateRefreshToken(UserDetails userDetails) {
+        return generateToken(new HashMap<>(), userDetails, REFRESH_TOKEN_EXPIRATION);
     }
 
 

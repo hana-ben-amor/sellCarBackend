@@ -19,10 +19,10 @@ public class CustomerController {
     @Autowired
     private CustomerService customerService;
 
-    @GetMapping
-    public String hello()
+    @GetMapping("/cars/{userId}")
+   public ResponseEntity<?> myCars(@PathVariable Long userId)
     {
-        return "hello";
+        return ResponseEntity.ok(customerService.getMyCars(userId));
     }
 
     @PostMapping("/add-car")
@@ -31,5 +31,6 @@ public class CustomerController {
         if (success) return ResponseEntity.status(HttpStatus.CREATED).build();
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
     }
+
 
 }
